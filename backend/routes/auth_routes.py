@@ -27,7 +27,8 @@ def login():
     if not user or not verify_password(user["password_hash"], data.get("password")):
         return jsonify({"error": "Invalid credentials"}), 401
 
-    # For now, return user info; later swap in JWT or session cookie
+    # will generate a JWT token here in the future
+    # For now, just return user info
     return jsonify({
         "username": user["username"],
         "email":    user["email"],

@@ -1,4 +1,3 @@
-# backend/routes/entry_routes.py
 from flask import Blueprint, request, jsonify
 from db import mongo
 from bson import ObjectId
@@ -11,14 +10,19 @@ def _convert_id(doc):
     doc['_id'] = str(doc['_id'])
     return doc
 
+VALID_TYPES = [
+    'entity', 'group', 'human', 'news',
+    'organization', 'planet', 'location',
+    'artifact', 'event', 'species', 'dimension'
+]
+
 @entry_bp.route('/entries', methods=['GET'])
 def list_entries():
     """
     Retrieve all entries from the unified index
     """
     entries = list(mongo.db.entry_index.find())
-    for e in entries:
-        e = _convert_id(e)
+    entries = [_convert_id(e) for e in entries]
     return jsonify(entries), 200
 
 @entry_bp.route('/entry/<entry_type>/<string:index_id>', methods=['GET'])
@@ -26,6 +30,9 @@ def get_entry(entry_type, index_id):
     """
     Retrieve a specific sub-entry by type and indexId
     """
+    if entry_type not in VALID_TYPES:
+        return jsonify({'error': 'Invalid entry type'}), 400
+
     try:
         idx = ObjectId(index_id)
     except:
@@ -35,7 +42,12 @@ def get_entry(entry_type, index_id):
     if not mongo.db.entry_index.find_one({'_id': idx}):
         return jsonify({'error': 'Index not found'}), 404
 
-    collection = mongo.db.get_collection(f"{entry_type}_entries")
+    # Determine collection name
+    col_name = f"{entry_type}_entries"
+    if col_name not in mongo.db.list_collection_names():
+        col_name = entry_type  # fallback
+    collection = mongo.db.get_collection(col_name)
+
     item = collection.find_one({'indexId': idx})
     if not item:
         return jsonify({'error': 'Entry not found'}), 404
@@ -46,7 +58,7 @@ def get_entry(entry_type, index_id):
 def create_entry():
     """
     Create a new entry: insert into sub-collection and index
-    Expected JSON: { type, title, summary, details: {...} }
+    Expected JSON: { type, title, summary, details: {...}, createdBy }
     """
     data = request.get_json() or {}
     entry_type = data.get('type')
@@ -55,7 +67,7 @@ def create_entry():
     details = data.get('details', {})
     creator = data.get('createdBy', 'unknown')
 
-    if entry_type not in ['entity', 'group', 'human', 'news']:
+    if entry_type not in VALID_TYPES:
         return jsonify({'error': 'Invalid entry type'}), 400
     if not title or not summary:
         return jsonify({'error': 'Missing title or summary'}), 400
@@ -70,9 +82,14 @@ def create_entry():
     }
     idx_res = mongo.db.entry_index.insert_one(idx_doc)
 
+    # Determine sub-collection name
+    col_name = f"{entry_type}_entries"
+    if col_name not in mongo.db.list_collection_names():
+        col_name = entry_type
+    sub_col = mongo.db.get_collection(col_name)
+
     # Insert into sub-collection
     sub_doc = {'indexId': idx_res.inserted_id, **details}
-    sub_col = mongo.db.get_collection(f"{entry_type}_entries")
     sub_col.insert_one(sub_doc)
 
     return jsonify({'message': 'Entry created', 'indexId': str(idx_res.inserted_id)}), 201
@@ -82,13 +99,21 @@ def delete_entry(entry_type, index_id):
     """
     Delete entry from both index and sub-collection
     """
+    if entry_type not in VALID_TYPES:
+        return jsonify({'error': 'Invalid entry type'}), 400
+
     try:
         idx = ObjectId(index_id)
     except:
         return jsonify({'error': 'Invalid index_id'}), 400
 
+    # Determine sub-collection name
+    col_name = f"{entry_type}_entries"
+    if col_name not in mongo.db.list_collection_names():
+        col_name = entry_type
+    sub_col = mongo.db.get_collection(col_name)
+
     # Delete sub-entry
-    sub_col = mongo.db.get_collection(f"{entry_type}_entries")
     res = sub_col.delete_one({'indexId': idx})
     if res.deleted_count == 0:
         return jsonify({'error': 'Sub-entry not found'}), 404

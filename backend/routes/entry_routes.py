@@ -28,7 +28,7 @@ def list_entries():
 @entry_bp.route('/entry/<entry_type>/<string:index_id>', methods=['GET'])
 def get_entry(entry_type, index_id):
     """
-    Retrieve a specific sub-entry by type and indexId
+    Retrieve a specific sub-entry by type and indexId, merging index data.
     """
     if entry_type not in VALID_TYPES:
         return jsonify({'error': 'Invalid entry type'}), 400
@@ -38,8 +38,9 @@ def get_entry(entry_type, index_id):
     except:
         return jsonify({'error': 'Invalid index_id'}), 400
 
-    # Ensure the index exists
-    if not mongo.db.entry_index.find_one({'_id': idx}):
+    # Fetch the index document
+    index_doc = mongo.db.entry_index.find_one({'_id': idx})
+    if not index_doc:
         return jsonify({'error': 'Index not found'}), 404
 
     # Determine collection name
@@ -48,11 +49,21 @@ def get_entry(entry_type, index_id):
         col_name = entry_type  # fallback
     collection = mongo.db.get_collection(col_name)
 
-    item = collection.find_one({'indexId': idx})
-    if not item:
+    # Fetch the sub-entry document
+    sub_entry = collection.find_one({'indexId': idx})
+    if not sub_entry:
         return jsonify({'error': 'Entry not found'}), 404
-    item = _convert_id(item)
-    return jsonify(item), 200
+
+    # Merge index data with sub-entry data
+    sub_entry = _convert_id(sub_entry)
+    sub_entry.update({
+        'title': index_doc.get('title'),
+        'summary': index_doc.get('summary'),
+        'createdBy': index_doc.get('createdBy'),
+        'createdAt': index_doc.get('createdAt'),
+    })
+
+    return jsonify(sub_entry), 200
 
 @entry_bp.route('/entry', methods=['POST'])
 def create_entry():

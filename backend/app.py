@@ -5,6 +5,7 @@ from routes.auth_routes import auth_bp
 from routes.entry_routes import entry_bp
 from routes.category_routes import category_bp
 from flask_jwt_extended import JWTManager
+from Flask_mail import Mail
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
@@ -18,6 +19,16 @@ app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config["JWT_COOKIE_SECURE"] = False   # set True in production with HTTPS
 app.config["JWT_COOKIE_CSRF_PROTECT"] = False  # enable if you want CSRF protection
 jwt = JWTManager(app)
+
+app.config.update({
+   "MAIL_SERVER": "smtp.mailtrap.io",  # or smtp.gmail.com
+    "MAIL_PORT": 587,
+    "MAIL_USE_TLS": True,
+    "MAIL_USERNAME": "your_username",
+    "MAIL_PASSWORD": "your_password",
+    "MAIL_DEFAULT_SENDER": "no-reply@yourdomain.com"
+})
+
 
 if __name__ == "__main__":
     print("Registered routes:")

@@ -9,14 +9,15 @@ const Header = ({ onSearch }) => {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
   const navigate = useNavigate();
 
-  // Update user state when the user is logged out or logged in
   useEffect(() => {
-    setUser(JSON.parse(localStorage.getItem("user")));
+  const updateUser = () => setUser(JSON.parse(localStorage.getItem("user")));
+   window.addEventListener("userChanged", updateUser);
+  return () => window.removeEventListener("userChanged", updateUser);
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("user"); // Clear user from localStorage
-    setUser(null); // Update the state to null to force re-render
+    localStorage.removeItem("user");
+    setUser(null); 
   };
 
   return (

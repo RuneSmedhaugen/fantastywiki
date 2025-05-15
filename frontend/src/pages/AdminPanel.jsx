@@ -1,16 +1,21 @@
-// src/pages/AdminPanel.jsx
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 
 const AdminPanel = () => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
     if (stored) {
       setUser(JSON.parse(stored));
     }
+    setLoading(false);
   }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
     return <Navigate to="/" replace />;

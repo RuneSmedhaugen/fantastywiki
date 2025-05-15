@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from db import mongo
-from auth import make_user_doc, verify_password
+from auth import make_user_doc, verify_password, hash_password
 from bson import ObjectId
 from flask_jwt_extended import (
     JWTManager,
@@ -30,6 +30,52 @@ def register():
         return jsonify({"error": "Username or email already exists"}), 409
 
     return jsonify({"message": "User created", "id": str(res.inserted_id)}), 201
+
+# Update user account
+@auth_bp.route("/update-account", methods=["PUT"])
+@jwt_required()
+def update_account():
+    user_id = get_jwt_identity()
+    data = request.get_json() or {}
+
+    # Validate input
+    if not any(k in data for k in ("username", "email", "password")):
+        return jsonify({"error": "No fields to update"}), 400
+
+    update_fields = {}
+    if "username" in data:
+        update_fields["username"] = data["username"]
+    if "email" in data:
+        update_fields["email"] = data["email"]
+    if "password" in data:
+        update_fields["password_hash"] = hash_password(data["password"])
+
+    try:
+        result = mongo.db.users.update_one({"_id": ObjectId(user_id)}, {"$set": update_fields})
+        if result.matched_count == 0:
+            return jsonify({"error": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"error": "Failed to update account", "details": str(e)}), 500
+
+    return jsonify({"message": "Account updated successfully"}), 200
+
+# Delete user account
+@auth_bp.route("/delete-account", methods=["DELETE"])
+@jwt_required()
+def delete_account():
+    user_id = get_jwt_identity()
+
+    try:
+        result = mongo.db.users.delete_one({"_id": ObjectId(user_id)})
+        if result.deleted_count == 0:
+            return jsonify({"error": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"error": "Failed to delete account", "details": str(e)}), 500
+
+    # Clear JWT cookies after account deletion
+    resp = jsonify({"message": "Account deleted successfully"})
+    unset_jwt_cookies(resp)
+    return resp, 200
 
 # Login user and set JWT in cookie
 @auth_bp.route("/login", methods=["POST"])

@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router-dom';
 
 const SettingsModal = ({ isOpen, onClose, onLogout }) => {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem('user'));
 
   const handleLogout = () => {
     localStorage.removeItem('user');
     window.location.reload();
-    onLogout(); 
+    onLogout();
     onClose();
     navigate('/');
   };
@@ -67,6 +68,17 @@ const SettingsModal = ({ isOpen, onClose, onLogout }) => {
                   >
                     Account Settings
                   </button>
+                  {user && (user.role === 'admin' || user.role === 'superadmin') && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        navigate('/admin');
+                      }}
+                      className="w-full text-left px-4 py-2 bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200"
+                    >
+                      Admin Panel
+                    </button>
+                  )}
                   <button
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200"

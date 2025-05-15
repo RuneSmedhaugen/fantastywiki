@@ -1,23 +1,39 @@
-// src/pages/AccountSettings.jsx
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import WarningModal from '../components/WarningModal';
+import { API_BASE } from '../config';
 
 const AccountSettings = () => {
   const [user, setUser] = useState(null);
   const [form, setForm] = useState({ username: '', email: '', password: '' });
   const [showWarning, setShowWarning] = useState(false);
+  const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
+    console.log("localStorage.getItem('user'):", stored);
     if (stored) {
       const u = JSON.parse(stored);
+      console.log("Parsed user from localStorage:", u);
       setUser(u);
       setForm({ username: u.username, email: u.email, password: '' });
+    } else {
+      console.log("No user found in localStorage.");
     }
+    setLoading(false); // <-- Set loading to false after checking
   }, []);
 
+  useEffect(() => {
+    console.log("Current user state:", user);
+  }, [user]);
+
+  if (loading) {
+    return <div>Loading...</div>; // Or a spinner
+  }
+
   if (!user) {
+    console.log("User is null, redirecting to login.");
     return <Navigate to="/login" replace />;
   }
 
@@ -25,17 +41,62 @@ const AccountSettings = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    // TODO: call API to update account
-    console.log('Saving', form);
+    try {
+      const res = await fetch(`${API_BASE}/update-account`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          credentials: 'include',
+        },
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        console.error('Failed to update account:', error);
+        alert(error.error || 'Failed to update account');
+        return;
+      }
+
+      const updatedUser = await res.json();
+      console.log('Account updated:', updatedUser);
+
+      // Update local storage and state
+      localStorage.setItem('user', JSON.stringify({ ...user, ...form }));
+      setUser({ ...user, ...form });
+      alert('Account updated successfully!');
+    } catch (err) {
+      console.error('Error updating account:', err);
+      alert('An error occurred while updating your account.');
+    }
   };
 
-  const handleDelete = () => {
-    // TODO: call API to delete account
-    console.log('Account deleted');
-    localStorage.removeItem('user');
-    window.location.href = '/login';
+  const handleDelete = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/delete-account`, {
+        method: 'DELETE',
+        headers: {
+          credentials: 'include',
+        },
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        console.error('Failed to delete account:', error);
+        alert(error.error || 'Failed to delete account');
+        return;
+      }
+
+      console.log('Account deleted');
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    } catch (err) {
+      console.error('Error deleting account:', err);
+      alert('An error occurred while deleting your account.');
+    }
   };
 
   return (

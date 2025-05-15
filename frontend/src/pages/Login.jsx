@@ -1,4 +1,3 @@
-// src/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../config";
@@ -21,13 +20,11 @@ const Login = () => {
         body: JSON.stringify({ username, password }),
       });
 
-      // Preflight or network-level failure
       if (!res) {
         setError("Network error");
         return;
       }
 
-      // If CORS preflight fails, it never reaches here
       const data = await res.json();
 
       if (!res.ok) {
@@ -35,11 +32,10 @@ const Login = () => {
         return;
       }
 
-      // Store user info (the cookie is stored automatically)
       localStorage.setItem("user", JSON.stringify(data));
       window.dispatchEvent(new Event("userChanged"));
       navigate("/");
-      
+
     } catch (err) {
       console.error(err);
       setError("Request failed");
@@ -54,7 +50,18 @@ const Login = () => {
       >
         <h2 className="text-3xl font-bold mb-6 text-center">Login</h2>
 
-        {error && <p className="text-red-400 mb-4 text-center">{error}</p>}
+        {/* 🔽 Updated error message styling logic */}
+        {error && (
+          <p
+            className={`mb-4 text-center ${
+              error.toLowerCase().includes("verify")
+                ? "text-yellow-400"
+                : "text-red-400"
+            }`}
+          >
+            {error}
+          </p>
+        )}
 
         <label className="block mb-3">
           <span className="text-sm">Username</span>

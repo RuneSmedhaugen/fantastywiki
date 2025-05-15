@@ -5,7 +5,6 @@ from routes.auth_routes import auth_bp
 from routes.entry_routes import entry_bp
 from routes.category_routes import category_bp
 from flask_jwt_extended import JWTManager
-from Flask_mail import Mail
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)

@@ -10,7 +10,11 @@ from flask_jwt_extended import (
     set_access_cookies,
     unset_jwt_cookies
 )
-from datetime import timedelta
+from datetime import timedelta, datetime
+from urllib.parse import urlencode
+from flask_mail import  Message, Mail
+
+mail = Mail()
 
 # Initialize blueprint
 auth_bp = Blueprint("auth", __name__)
@@ -19,7 +23,6 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.route("/register", methods=["POST"])
 def register():
     data = request.get_json() or {}
-    # Basic validation
     if not all(k in data for k in ("username", "email", "password")):
         return jsonify({"error": "Missing fields"}), 400
 
@@ -29,7 +32,34 @@ def register():
     except Exception:
         return jsonify({"error": "Username or email already exists"}), 409
 
-    return jsonify({"message": "User created", "id": str(res.inserted_id)}), 201
+    # Send email
+    token = user_doc["verification_token"]
+    query = urlencode({"token": token})
+    verify_link = f"http://localhost:5173/verify-email?{query}"
+    msg = Message("Verify your account", recipients=[user_doc["email"]])
+    msg.body = f"Click the link to verify your email: {verify_link}"
+    mail.send(msg)
+
+    return jsonify({"message": "User created, please verify email", "id": str(res.inserted_id)}), 201
+
+@auth_bp.route("/verify-email", methods=["GET"])
+def verify_email():
+    token = request.args.get("token")
+    if not token:
+        return jsonify({"error": "Token missing"}), 400
+
+    user = mongo.db.users.find_one({"verification_token": token})
+    if not user:
+        return jsonify({"error": "Invalid token"}), 400
+    if user["token_expires"] < datetime.utcnow():
+        return jsonify({"error": "Token expired"}), 400
+
+    mongo.db.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"is_verified": True}, "$unset": {"verification_token": "", "token_expires": ""}}
+    )
+    return jsonify({"message": "Email verified successfully"}), 200
+
 
 # Update user account
 @auth_bp.route("/update-account", methods=["PUT"])
@@ -84,6 +114,10 @@ def login():
     user = mongo.db.users.find_one({"username": data.get("username")})
     if not user or not verify_password(user.get("password_hash", ""), data.get("password")):
         return jsonify({"error": "Invalid credentials"}), 401
+    
+    if not user.get("is_verified", False):
+        return jsonify({"error": "Please verify your email first"}), 401
+
 
     # Create JWT token
     access_token = create_access_token(

@@ -19,6 +19,7 @@ const EntityView = ({ entry }) => {
           <li><strong>Goal:</strong> {entry.goal}</li>
           <li><strong>Origin:</strong> {entry.origin}</li>
           <li><strong>Fun Fact:</strong> {entry.fun_fact}</li>
+          <li><strong>Detained:</strong> {entry.detained}</li>
         </ul>
       </section>
     </article>

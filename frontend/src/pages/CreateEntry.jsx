@@ -1,55 +1,47 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { API_BASE } from '../config';
 
 const CreateEntry = () => {
   const { type } = useParams();
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    title: '',
-    summary: '',
-    details: { date: '' } // Include "date" in the initial details
-  });
-  const [fields, setFields] = useState([]);
+  const [fields, setFields] = useState([
+    { key: '', value: '' }
+  ]);
+  const [title, setTitle] = useState('');
+  const [summary, setSummary] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    // Fetch category schema
-    fetch(`${API_BASE}/categories`)
-      .then(res => res.json())
-      .then(data => {
-        const category = data.find(c => c.name === type);
-        if (category && category.fields) {
-          setFields([...category.fields, { name: 'date', label: 'Date', type: 'date' }]); // Add "date" field
-        } else {
-          setFields([{ name: 'date', label: 'Date', type: 'date' }]); // Default to "date" field if no schema
-        }
-      })
-      .catch(err => console.error('Failed loading category schema', err));
-  }, [type]);
+  const handleFieldChange = (idx, field, value) => {
+    const updated = fields.map((f, i) =>
+      i === idx ? { ...f, [field]: value } : f
+    );
+    setFields(updated);
+  };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === 'title' || name === 'summary') {
-      setForm({ ...form, [name]: value });
-    } else {
-      setForm({
-        ...form,
-        details: { ...form.details, [name]: value }
-      });
-    }
+  const handleAddField = () => {
+    setFields([...fields, { key: '', value: '' }]);
+  };
+
+  const handleRemoveField = (idx) => {
+    setFields(fields.filter((_, i) => i !== idx));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    const details = {};
+    fields.forEach(f => {
+      if (f.key) details[f.key] = f.value;
+    });
+
     try {
       const currentUser = JSON.parse(localStorage.getItem('user')) || {};
       const payload = {
         type,
-        title: form.title,
-        summary: form.summary,
-        details: form.details,
+        title,
+        summary,
+        details,
         createdBy: currentUser.username || 'unknown'
       };
       const res = await fetch(`${API_BASE}/entry`, {
@@ -79,8 +71,8 @@ const CreateEntry = () => {
           <label className="block text-sm font-medium text-gray-700">Title</label>
           <input
             name="title"
-            value={form.title}
-            onChange={handleChange}
+            value={title}
+            onChange={e => setTitle(e.target.value)}
             required
             className="mt-1 block w-full p-2 border rounded"
           />
@@ -89,33 +81,49 @@ const CreateEntry = () => {
           <label className="block text-sm font-medium text-gray-700">Summary</label>
           <input
             name="summary"
-            value={form.summary}
-            onChange={handleChange}
+            value={summary}
+            onChange={e => setSummary(e.target.value)}
             required
             className="mt-1 block w-full p-2 border rounded"
           />
         </div>
-        {fields.map(f => (
-          <div key={f.name}>
-            <label className="block text-sm font-medium text-gray-700">{f.label}</label>
-            {f.type === 'date' ? (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Details</label>
+          {fields.map((f, idx) => (
+            <div key={idx} className="flex gap-2 mb-2">
               <input
-                type="date"
-                name={f.name}
-                value={form.details[f.name] || ''}
-                onChange={handleChange}
-                className="mt-1 block w-full p-2 border rounded"
+                type="text"
+                placeholder="Field name"
+                value={f.key}
+                onChange={e => handleFieldChange(idx, 'key', e.target.value)}
+                className="flex-1 p-2 border rounded"
               />
-            ) : (
               <input
-                name={f.name}
-                value={form.details[f.name] || ''}
-                onChange={handleChange}
-                className="mt-1 block w-full p-2 border rounded"
+                type="text"
+                placeholder="Value"
+                value={f.value}
+                onChange={e => handleFieldChange(idx, 'value', e.target.value)}
+                className="flex-1 p-2 border rounded"
               />
-            )}
-          </div>
-        ))}
+              <button
+                type="button"
+                onClick={() => handleRemoveField(idx)}
+                className="px-2 py-1 bg-red-500 text-white rounded"
+                disabled={fields.length === 1}
+                title="Remove field"
+              >
+                −
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={handleAddField}
+            className="mt-2 px-4 py-1 bg-blue-500 text-white rounded"
+          >
+            + Add Field
+          </button>
+        </div>
         <div className="flex gap-4">
           <button
             type="submit"

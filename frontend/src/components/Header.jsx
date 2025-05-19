@@ -6,7 +6,7 @@ import Logo from "../img/archivelogo.png";
 import SearchModal from "./SearchModal";
 import { API_BASE } from "../config";
 
-const Header = ({ onSearch }) => {
+const Header = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
   const navigate = useNavigate();

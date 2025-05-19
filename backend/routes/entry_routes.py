@@ -100,7 +100,7 @@ def create_entry():
     sub_col = mongo.db.get_collection(col_name)
 
     # Insert into sub-collection
-    sub_doc = {'indexId': idx_res.inserted_id, **details}
+    sub_doc = {'indexId': idx_res.inserted_id, **details, 'sections': data.get('sections', [])}
     sub_col.insert_one(sub_doc)
 
     return jsonify({'message': 'Entry created', 'indexId': str(idx_res.inserted_id)}), 201
@@ -132,3 +132,23 @@ def delete_entry(entry_type, index_id):
     # Delete index
     mongo.db.entry_index.delete_one({'_id': idx})
     return jsonify({'message': 'Entry deleted'}), 200
+
+@entry_bp.route('/search', methods=['GET'])
+def search_entries():
+    """
+    Search entries by title or summary (case-insensitive, partial match)
+    """
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify([])
+
+    # Simple text search on title and summary
+    search_filter = {
+        "$or": [
+            {"title": {"$regex": query, "$options": "i"}},
+            {"summary": {"$regex": query, "$options": "i"}}
+        ]
+    }
+    results = list(mongo.db.entry_index.find(search_filter))
+    results = [_convert_id(e) for e in results]
+    return jsonify(results), 200

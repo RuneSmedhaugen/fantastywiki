@@ -3,25 +3,43 @@ import { useState, useEffect } from "react";
 import SearchBar from "./SearchBar";
 import SettingsModal from "./SettingsModal";
 import Logo from "../img/archivelogo.png";
+import SearchModal from "./SearchModal";
+import { API_BASE } from "../config";
 
 const Header = ({ onSearch }) => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
   const navigate = useNavigate();
+  const [searchResults, setSearchResults] = useState([]);
+  const [showResults, setShowResults] = useState(false);
+
+  const handleSearch = async (query) => {
+    if (!query) {
+      setShowResults(false);
+      setSearchResults([]);
+      return;
+    }
+    const res = await fetch(
+      `${API_BASE}/search?q=${encodeURIComponent(query)}`
+    );
+    const data = await res.json();
+    setSearchResults(data);
+    setShowResults(true);
+  };
 
   useEffect(() => {
-  const updateUser = () => setUser(JSON.parse(localStorage.getItem("user")));
-   window.addEventListener("userChanged", updateUser);
-  return () => window.removeEventListener("userChanged", updateUser);
+    const updateUser = () => setUser(JSON.parse(localStorage.getItem("user")));
+    window.addEventListener("userChanged", updateUser);
+    return () => window.removeEventListener("userChanged", updateUser);
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    setUser(null); 
+    setUser(null);
   };
 
   return (
-    <header className="bg-white shadow p-4 flex items-center justify-between">
+    <header className="bg-white shadow p-4 flex items-center justify-between relative">
       <div
         className="flex items-center cursor-pointer"
         onClick={() => navigate("/")}
@@ -30,8 +48,14 @@ const Header = ({ onSearch }) => {
       </div>
 
       {/* Search Bar */}
-      <SearchBar onSearch={onSearch} />
-
+      <div className="relative w-full max-w-lg mx-4">
+        <SearchBar onSearch={handleSearch} />
+        <SearchModal
+          results={searchResults}
+          show={showResults}
+          onClose={() => setShowResults(false)}
+        />
+      </div>
       {/* Auth / Settings Button */}
       <div>
         {!user ? (

@@ -14,9 +14,5 @@ def make_user_doc(username, email, pw_plain, role="user"):
         "username": username,
         "email":    email,
         "password_hash": hash_password(pw_plain),
-        "role":     role,              
-        "created_at": datetime.utcnow(),
-        "is_verified": False,
-        "verification_token": str(uuid.uuid4()),
-        "verification_token_expiry": datetime.utcnow() + timedelta(days=1)
+        "role":     role,
     }

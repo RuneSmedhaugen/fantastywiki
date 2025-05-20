@@ -16,7 +16,7 @@ const SettingsModal = ({ isOpen, onClose, onLogout }) => {
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-10" onClose={onClose}>
+      <Dialog as="div" className="relative z-50" onClose={onClose}>
         {/* Background overlay */}
         <Transition.Child
           as={Fragment}
@@ -27,61 +27,62 @@ const SettingsModal = ({ isOpen, onClose, onLogout }) => {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" />
         </Transition.Child>
 
         {/* Modal panel */}
-        <div className="fixed inset-0 z-10 overflow-y-auto">
-          <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4 sm:p-0">
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-300"
-              enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-              enterTo="opacity-100 translate-y-0 sm:scale-100"
+              enterFrom="opacity-0 scale-90"
+              enterTo="opacity-100 scale-100"
               leave="ease-in duration-200"
-              leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-              leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-90"
             >
-              <Dialog.Panel className="relative transform overflow-hidden rounded-2xl bg-white px-6 pt-5 pb-4 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6">
-                <Dialog.Title
-                  as="h3"
-                  className="text-lg leading-6 font-medium text-gray-900 mb-4"
-                >
+              <Dialog.Panel className="relative transform overflow-hidden rounded-2xl bg-gray-900 border border-indigo-500 px-6 py-6 text-left shadow-xl transition-all w-full max-w-sm text-white backdrop-blur-md">
+                <Dialog.Title className="text-lg font-bold text-indigo-300 mb-6">
                   Settings
                 </Dialog.Title>
-                <div className="space-y-4">
+
+                <div className="space-y-4 text-sm">
                   <button
                     onClick={() => {
                       onClose();
                       navigate('/profile');
                     }}
-                    className="w-full text-left px-4 py-2 bg-gray-100 rounded hover:bg-gray-200"
+                    className="w-full text-left px-4 py-2 bg-indigo-700/40 border border-indigo-400 rounded hover:bg-indigo-600/60 transition"
                   >
                     Profile
                   </button>
+
                   <button
                     onClick={() => {
                       onClose();
                       navigate('/account-settings');
                     }}
-                    className="w-full text-left px-4 py-2 bg-gray-100 rounded hover:bg-gray-200"
+                    className="w-full text-left px-4 py-2 bg-cyan-700/30 border border-cyan-400 rounded hover:bg-cyan-600/50 transition"
                   >
                     Account Settings
                   </button>
+
                   {user && (user.role === 'admin' || user.role === 'superadmin') && (
                     <button
                       onClick={() => {
                         onClose();
                         navigate('/admin');
                       }}
-                      className="w-full text-left px-4 py-2 bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200"
+                      className="w-full text-left px-4 py-2 bg-yellow-100/10 text-yellow-300 border border-yellow-500 rounded hover:bg-yellow-200/10 transition"
                     >
                       Admin Panel
                     </button>
                   )}
+
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200"
+                    className="w-full text-left px-4 py-2 bg-red-500/10 text-red-400 border border-red-500 rounded hover:bg-red-500/20 transition"
                   >
                     Log Out
                   </button>

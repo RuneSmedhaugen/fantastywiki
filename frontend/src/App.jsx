@@ -11,6 +11,8 @@ import CreateEntry from './pages/CreateEntry';
 import AdminPanel from './pages/AdminPanel';
 import EntryDetail from './pages/EntryDetail';
 import CategoryEntries from './pages/CategoryEntries';
+import './App.css';
+
 
 function App() {
   const handleSearch = (query) => {

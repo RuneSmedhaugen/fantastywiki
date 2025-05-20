@@ -18,13 +18,16 @@ const EntryDetail = () => {
       .finally(() => setLoading(false));
   }, [type, id]);
 
-  if (loading) return <p className="text-center mt-10">Loading...</p>;
-  if (!entry) return <p className="text-center mt-10">Entry not found.</p>;
-
   return (
-  <div className="p-4 max-w-7xl mx-auto">
-    <DynamicEntryView entry={entry} />
-  </div>
+    <div className="p-6 max-w-5xl mx-auto text-white">
+      {loading ? (
+        <p className="text-center text-indigo-300">Loading entry...</p>
+      ) : entry ? (
+        <DynamicEntryView entry={entry} />
+      ) : (
+        <p className="text-center text-red-400">Entry not found.</p>
+      )}
+    </div>
   );
 };
 

@@ -1,7 +1,6 @@
 // src/pages/Home.jsx
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Header from '../components/Header';
 
 const Home = () => {
   const [user, setUser] = useState(null);
@@ -12,13 +11,11 @@ const Home = () => {
     const stored = localStorage.getItem('user');
     if (stored) setUser(JSON.parse(stored));
 
-    // fetch latest news
     fetch('http://localhost:5000/entries')
       .then(res => res.json())
       .then(data => setNews(data.filter(e => e.type === 'news').slice(0, 5)))
       .catch(console.error);
 
-    // fetch categories
     fetch('http://localhost:5000/categories')
       .then(res => res.json())
       .then(data => setCategories(data.map(c => c.name)))
@@ -26,45 +23,49 @@ const Home = () => {
   }, []);
 
   return (
-    <>
-      <div className="flex flex-col md:flex-row gap-6 p-4 max-w-7xl mx-auto">
-        {/* Main content */}
-        <div className="flex-1 space-y-6">
-          <h1 className="text-4xl font-bold">The A.R.C-hives</h1>
-          <p className="text-gray-700">Welcome{user ? ` back, ${user.username}` : ''}! Explore the latest updates and dive into our archives.</p>
+    <div className="flex flex-col md:flex-row gap-8 p-6 max-w-screen-xl mx-auto text-white">
+      {/* Main content */}
+      <div className="flex-1 space-y-8">
+        <h1 className="text-5xl font-bold text-violet-300 drop-shadow-lg">The A.R.C-hives</h1>
+        <p className="text-gray-300 text-lg">Welcome{user ? ` back, ${user.username}` : ''}! Explore the latest updates and dive into our archives.</p>
 
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">Latest News</h2>
-            <ul className="space-y-3">
+        <section>
+          <details open className="group bg-gray-900/60 backdrop-blur-md border border-violet-500 rounded-lg shadow-xl">
+            <summary className="cursor-pointer px-6 py-4 text-xl font-semibold text-violet-400 group-open:rounded-b-none hover:text-violet-300">
+              Latest News
+            </summary>
+            <div className="px-6 py-4 space-y-4">
               {news.map(item => (
-                <li key={item._id} className="p-4 bg-white shadow rounded-lg">
-                  <Link to={`/entry/news/${item._id}`} className="text-lg font-medium text-blue-600 hover:underline">
+                <div key={item._id} className="bg-black/30 border border-indigo-600 p-4 rounded-lg shadow hover:shadow-violet-500/20 transition">
+                  <Link to={`/entry/news/${item._id}`} className="text-lg font-semibold text-indigo-400 hover:underline">
                     {item.title}
                   </Link>
-                  <p className="text-sm text-gray-600 mt-1">{item.summary}</p>
-                </li>
+                  <p className="text-gray-400 mt-1">{item.summary}</p>
+                </div>
               ))}
-            </ul>
-          </section>
-        </div>
-
-        {/* Side panel */}
-        <aside className="w-full md:w-1/4 space-y-6">
-          <div className="bg-white p-4 shadow rounded-lg">
-            <h3 className="text-xl font-semibold mb-3">Browse by Category</h3>
-            <ul className="space-y-2">
-              {categories.map(cat => (
-                <li key={cat}>
-                  <Link to={`/entries?category=${cat}`} className="text-gray-700 hover:text-blue-600 hover:underline">
-                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </aside>
+            </div>
+          </details>
+        </section>
       </div>
-    </>
+
+      {/* Sidebar */}
+      <aside className="w-full md:w-1/3 space-y-6">
+        <details open className="group bg-gray-900/60 backdrop-blur-md border border-cyan-500 rounded-lg shadow-xl">
+          <summary className="cursor-pointer px-6 py-4 text-xl font-semibold text-cyan-400 group-open:rounded-b-none hover:text-cyan-300">
+            Browse by Category
+          </summary>
+          <ul className="px-6 py-4 space-y-3">
+            {categories.map(cat => (
+              <li key={cat}>
+                <Link to={`/entries?category=${cat}`} className="text-gray-300 hover:text-cyan-400 hover:underline">
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </details>
+      </aside>
+    </div>
   );
 };
 

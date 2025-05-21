@@ -1,17 +1,17 @@
-import { Fragment } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
-import { useNavigate } from 'react-router-dom';
+import { Fragment } from "react";
+import { Dialog, Transition } from "@headlessui/react";
+import { useNavigate } from "react-router-dom";
 
 const SettingsModal = ({ isOpen, onClose, onLogout }) => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user'));
+  const user = JSON.parse(localStorage.getItem("user"));
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
+    localStorage.removeItem("user");
     window.location.reload();
     onLogout();
     onClose();
-    navigate('/');
+    navigate("/");
   };
 
   return (
@@ -51,7 +51,7 @@ const SettingsModal = ({ isOpen, onClose, onLogout }) => {
                   <button
                     onClick={() => {
                       onClose();
-                      navigate('/profile');
+                      navigate("/profile");
                     }}
                     className="w-full text-left px-4 py-2 bg-indigo-700/40 border border-indigo-400 rounded hover:bg-indigo-600/60 transition"
                   >
@@ -61,24 +61,30 @@ const SettingsModal = ({ isOpen, onClose, onLogout }) => {
                   <button
                     onClick={() => {
                       onClose();
-                      navigate('/account-settings');
+                      navigate("/account-settings");
                     }}
                     className="w-full text-left px-4 py-2 bg-cyan-700/30 border border-cyan-400 rounded hover:bg-cyan-600/50 transition"
                   >
                     Account Settings
                   </button>
 
-                  {user && (user.role === 'admin' || user.role === 'superadmin') && (
-                    <button
-                      onClick={() => {
-                        onClose();
-                        navigate('/admin');
-                      }}
-                      className="w-full text-left px-4 py-2 bg-yellow-100/10 text-yellow-300 border border-yellow-500 rounded hover:bg-yellow-200/10 transition"
-                    >
-                      Admin Panel
-                    </button>
-                  )}
+                  {user &&
+                    (user.role === "admin" || user.role === "superadmin") && (
+                      <button
+                        onClick={() => {
+                          console.log(user.role);
+                          onClose();
+                          if (user.role === "superadmin") {
+                            navigate("/superadmin");
+                          } else {
+                            navigate("/admin");
+                          }
+                        }}
+                        className="w-full text-left px-4 py-2 bg-yellow-100/10 text-yellow-300 border border-yellow-500 rounded hover:bg-yellow-200/10 transition"
+                      >
+                        {user.role === 'superadmin' ? 'Super Admin Panel' : 'Admin Panel'}
+                      </button>
+                    )}
 
                   <button
                     onClick={handleLogout}

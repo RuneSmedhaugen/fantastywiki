@@ -104,3 +104,16 @@ def delete_account():
     resp = jsonify({"message": "Account deleted successfully"})
     unset_jwt_cookies(resp)
     return resp, 200
+
+@auth_bp.route("/admin/delete-user/<string:user_id>", methods=["DELETE", "OPTIONS"])
+@jwt_required()
+def delete_user(user_id):
+    if request.method == "OPTIONS":
+        return jsonify({"ok": True}), 200
+    try:
+        result = mongo.db.users.delete_one({"_id": ObjectId(user_id)})
+        if result.deleted_count == 0:
+            return jsonify({"error": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"error": "Failed to delete user", "details": str(e)}), 500
+    return jsonify({"message": "User deleted"}), 200

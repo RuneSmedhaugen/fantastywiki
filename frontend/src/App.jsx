@@ -12,6 +12,7 @@ import AdminPanel from './pages/AdminPanel';
 import EntryDetail from './pages/EntryDetail';
 import CategoryEntries from './pages/CategoryEntries';
 import EditEntry from './components/EditEntry';
+import SuperAdminPanel from './pages/SuperAdminPanel';
 import './App.css';
 
 
@@ -37,6 +38,7 @@ function App() {
           <Route path="/edit-entry/:type/:id" element={<EditEntry />} />
           <Route path="/create-entry/:type" element={<CreateEntry />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/superadmin" element={<SuperAdminPanel />} />
           <Route path="/entry/:type/:id" element={<EntryDetail />} />
           <Route path="/entries" element={<CategoryEntries />} />
         </Routes>

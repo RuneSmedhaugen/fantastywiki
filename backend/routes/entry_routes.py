@@ -152,3 +152,51 @@ def search_entries():
     results = list(mongo.db.entry_index.find(search_filter))
     results = [_convert_id(e) for e in results]
     return jsonify(results), 200
+
+# ...existing code...
+
+@entry_bp.route('/entry/<entry_type>/<string:index_id>', methods=['PUT'])
+def edit_entry(entry_type, index_id):
+    """
+    Edit an existing entry in both the index and sub-collection.
+    Expects JSON: { title, summary, details: {...}, sections: [...] }
+    """
+    if entry_type not in VALID_TYPES:
+        return jsonify({'error': 'Invalid entry type'}), 400
+
+    try:
+        idx = ObjectId(index_id)
+    except:
+        return jsonify({'error': 'Invalid index_id'}), 400
+
+    data = request.get_json() or {}
+    title = data.get('title')
+    summary = data.get('summary')
+    details = data.get('details', {})
+    sections = data.get('sections', [])
+
+    # Update index document
+    index_update = {}
+    if title is not None:
+        index_update['title'] = title
+    if summary is not None:
+        index_update['summary'] = summary
+    if index_update:
+        mongo.db.entry_index.update_one({'_id': idx}, {'$set': index_update})
+
+    # Update sub-collection document
+    col_name = f"{entry_type}_entries"
+    if col_name not in mongo.db.list_collection_names():
+        col_name = entry_type
+    sub_col = mongo.db.get_collection(col_name)
+
+    sub_update = {}
+    if details:
+        sub_update.update(details)
+    sub_update['sections'] = sections
+
+    res = sub_col.update_one({'indexId': idx}, {'$set': sub_update})
+    if res.matched_count == 0:
+        return jsonify({'error': 'Entry not found'}), 404
+
+    return jsonify({'message': 'Entry updated'}), 200

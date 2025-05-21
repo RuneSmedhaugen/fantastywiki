@@ -11,6 +11,7 @@ import CreateEntry from './pages/CreateEntry';
 import AdminPanel from './pages/AdminPanel';
 import EntryDetail from './pages/EntryDetail';
 import CategoryEntries from './pages/CategoryEntries';
+import EditEntry from './components/EditEntry';
 import './App.css';
 
 
@@ -33,6 +34,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/account-settings" element={<AccountSettings />} />
           <Route path="/create-entry" element={<CreateEntrySelector />} />
+          <Route path="/edit-entry/:type/:id" element={<EditEntry />} />
           <Route path="/create-entry/:type" element={<CreateEntry />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/entry/:type/:id" element={<EntryDetail />} />

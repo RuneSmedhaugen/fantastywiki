@@ -1,0 +1,5 @@
+-test edit profile and edit entries
+-implement image upload
+-css profilepage
+-Modal for browsing
+-

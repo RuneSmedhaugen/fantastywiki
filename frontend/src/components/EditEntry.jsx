@@ -33,16 +33,17 @@ const EditEntry = () => {
 
   // Prefill form state when entry is loaded
   useEffect(() => {
-    if (entry) {
-      setTitle(entry.title || "");
-      setSummary(entry.summary || "");
-      const detailsArr = entry.details
-        ? Object.entries(entry.details).map(([key, value]) => ({ key, value }))
-        : [{ key: "", value: "" }];
-      setFields(detailsArr.length ? detailsArr : [{ key: "", value: "" }]);
-      setSections(entry.sections && entry.sections.length ? entry.sections : [{ title: "", content: "" }]);
-    }
-  }, [entry]);
+  if (entry) {
+    console.log(entry);
+    setTitle(entry.title || "");
+    setSummary(entry.summary || "");
+    const detailsArr = entry.details
+      ? Object.entries(entry.details).map(([key, value]) => ({ key, value }))
+      : [{ key: "", value: "" }];
+    setFields(detailsArr.length ? detailsArr : [{ key: "", value: "" }]);
+    setSections(entry.sections && entry.sections.length ? entry.sections : [{ title: "", content: "" }]);
+  }
+}, [entry]);
 
   // Handlers for fields and sections
   const handleFieldChange = (idx, field, value) => {

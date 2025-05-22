@@ -110,6 +110,12 @@ def delete_account():
 def delete_user(user_id):
     if request.method == "OPTIONS":
         return jsonify({"ok": True}), 200
+
+    current_user_id = get_jwt_identity()
+    current_user = mongo.db.users.find_one({"_id": ObjectId(current_user_id)})
+    if not current_user or current_user["role"] != "superadmin":
+        return jsonify({"error": "Unauthorized"}), 403
+
     try:
         result = mongo.db.users.delete_one({"_id": ObjectId(user_id)})
         if result.deleted_count == 0:
@@ -117,3 +123,46 @@ def delete_user(user_id):
     except Exception as e:
         return jsonify({"error": "Failed to delete user", "details": str(e)}), 500
     return jsonify({"message": "User deleted"}), 200
+
+@auth_bp.route("/admin/all-users", methods=["GET"])
+@jwt_required()
+def get_all_users():
+    user_id = get_jwt_identity()
+    user = mongo.db.users.find_one({"_id": ObjectId(user_id)})
+    if not user or user["role"] not in ("admin", "superadmin"):
+        return jsonify({"error": "Unauthorized"}), 403
+    users = list(mongo.db.users.find({}, {"password_hash": 0}))
+    for u in users:
+        u["_id"] = str(u["_id"])
+    return jsonify(users), 200
+
+@auth_bp.route("/admin/update-user/<string:user_id>", methods=["PUT"])
+@jwt_required()
+def update_user(user_id):
+    current_user_id = get_jwt_identity()
+    current_user = mongo.db.users.find_one({"_id": ObjectId(current_user_id)})
+    if not current_user or current_user["role"] != "superadmin":
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.get_json() or {}
+    update_fields = {}
+    if "username" in data:
+        update_fields["username"] = data["username"]
+    if "email" in data:
+        update_fields["email"] = data["email"]
+    if "role" in data:
+        update_fields["role"] = data["role"]
+    if "password" in data:
+        update_fields["password_hash"] = hash_password(data["password"])
+
+    if not update_fields:
+        return jsonify({"error": "No fields to update"}), 400
+
+    try:
+        result = mongo.db.users.update_one({"_id": ObjectId(user_id)}, {"$set": update_fields})
+        if result.matched_count == 0:
+            return jsonify({"error": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"error": "Failed to update user", "details": str(e)}), 500
+
+    return jsonify({"message": "User updated successfully"}), 200

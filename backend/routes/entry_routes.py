@@ -100,7 +100,11 @@ def create_entry():
     sub_col = mongo.db.get_collection(col_name)
 
     # Insert into sub-collection
-    sub_doc = {'indexId': idx_res.inserted_id, **details, 'sections': data.get('sections', [])}
+    sub_doc = {
+    'indexId': idx_res.inserted_id,
+    'details': details,
+    'sections': data.get('sections', [])
+}
     sub_col.insert_one(sub_doc)
 
     return jsonify({'message': 'Entry created', 'indexId': str(idx_res.inserted_id)}), 201
@@ -153,8 +157,6 @@ def search_entries():
     results = [_convert_id(e) for e in results]
     return jsonify(results), 200
 
-# ...existing code...
-
 @entry_bp.route('/entry/<entry_type>/<string:index_id>', methods=['PUT'])
 def edit_entry(entry_type, index_id):
     """
@@ -191,8 +193,8 @@ def edit_entry(entry_type, index_id):
     sub_col = mongo.db.get_collection(col_name)
 
     sub_update = {}
-    if details:
-        sub_update.update(details)
+    if details is not None:
+        sub_update['details'] = details
     sub_update['sections'] = sections
 
     res = sub_col.update_one({'indexId': idx}, {'$set': sub_update})

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { API_BASE } from "../config";
 
 const UserManager = () => {
@@ -6,14 +6,47 @@ const UserManager = () => {
   const [results, setResults] = useState([]);
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState("");
-  const [role, setRole] = useState(""); // For editing role
+  const [role, setRole] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [actionMsg, setActionMsg] = useState("");
 
+  // Fetch all users on mount
+  useEffect(() => {
+    const fetchAll = async () => {
+      setError("");
+      try {
+        const res = await fetch(`${API_BASE}/auth/admin/all-users`, {
+          credentials: "include",
+        });
+        const data = await res.json();
+        setResults(data);
+      } catch {
+        setError("Failed to load users.");
+      }
+    };
+    fetchAll();
+  }, []);
+
+  // Search users
   const handleSearch = async (e) => {
     e.preventDefault();
     setError("");
     setSelected(null);
     setActionMsg("");
+    if (!query.trim()) {
+      // If query is empty, fetch all users
+      try {
+        const res = await fetch(`${API_BASE}/auth/admin/all-users`, {
+          credentials: "include",
+        });
+        const data = await res.json();
+        setResults(data);
+      } catch {
+        setError("Failed to load users.");
+      }
+      return;
+    }
     try {
       const res = await fetch(`${API_BASE}/auth/admin/search-users?q=${encodeURIComponent(query)}`, {
         credentials: "include",
@@ -25,38 +58,40 @@ const UserManager = () => {
     }
   };
 
-  // When a user is selected, set the editable role
+  // When a user is selected, set the editable fields
   const handleSelect = (user) => {
     setSelected(user);
     setRole(user.role);
+    setUsername(user.username);
+    setEmail(user.email);
     setActionMsg("");
   };
 
-  // Update user role
-  const handleRoleChange = async () => {
+  // Update user (superadmin only)
+  const handleUpdateUser = async () => {
     setError("");
     setActionMsg("");
     try {
-      const res = await fetch(`${API_BASE}/auth/admin/update-user-role`, {
+      const res = await fetch(`${API_BASE}/auth/admin/update-user/${selected._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ userId: selected._id, role }),
+        body: JSON.stringify({ username, email, role }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Failed to update role.");
+        setError(data.error || "Failed to update user.");
         return;
       }
-      setActionMsg("Role updated!");
-      setSelected({ ...selected, role });
-      setResults(results.map(u => u._id === selected._id ? { ...u, role } : u));
+      setActionMsg("User updated!");
+      setSelected({ ...selected, username, email, role });
+      setResults(results.map(u => u._id === selected._id ? { ...u, username, email, role } : u));
     } catch {
-      setError("Failed to update role.");
+      setError("Failed to update user.");
     }
   };
 
-  // Delete user
+  // Delete user (superadmin only)
   const handleDelete = async () => {
     if (!window.confirm(`Are you sure you want to delete user "${selected.username}"?`)) return;
     setError("");
@@ -133,8 +168,22 @@ const UserManager = () => {
             </summary>
             <div className="px-6 py-4 space-y-3">
               <div>
+                <span className="font-semibold text-cyan-300">Username:</span>{" "}
+                <input
+                  type="text"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  className="ml-2 p-1 rounded bg-gray-800 text-cyan-200 border border-cyan-400"
+                />
+              </div>
+              <div>
                 <span className="font-semibold text-cyan-300">Email:</span>{" "}
-                <span className="text-gray-200">{selected.email}</span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className="ml-2 p-1 rounded bg-gray-800 text-cyan-200 border border-cyan-400"
+                />
               </div>
               <div>
                 <span className="font-semibold text-cyan-300">Role:</span>{" "}
@@ -147,16 +196,15 @@ const UserManager = () => {
                   <option value="admin">admin</option>
                   <option value="superadmin">superadmin</option>
                 </select>
+              </div>
+              <div className="flex gap-2 mt-4">
                 <button
-                  onClick={handleRoleChange}
-                  className="ml-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
-                  disabled={role === selected.role}
+                  onClick={handleUpdateUser}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
                   type="button"
                 >
-                  Update Role
+                  Update User
                 </button>
-              </div>
-              <div>
                 <button
                   onClick={handleDelete}
                   className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"

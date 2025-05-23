@@ -2,6 +2,10 @@ from flask import Blueprint, request, jsonify
 from db import mongo
 from bson import ObjectId
 import datetime
+from flask_jwt_extended import jwt_required
+from werkzeug.utils import secure_filename
+import uuid
+import os
 
 entry_bp = Blueprint('entry', __name__)
 
@@ -202,3 +206,60 @@ def edit_entry(entry_type, index_id):
         return jsonify({'error': 'Entry not found'}), 404
 
     return jsonify({'message': 'Entry updated'}), 200
+
+UPLOAD_FOLDER = "static/uploads"
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return "." in filename and "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@entry_bp.route("/entry/upload-image/<entry_type>/<string:index_id>", methods=["POST"])
+@jwt_required()
+def upload_entry_image(entry_type, index_id):
+    if entry_type not in VALID_TYPES:
+        return jsonify({"error": "Invalid entry type"}), 400
+
+    try:
+        obj_id = ObjectId(index_id)
+    except:
+        return jsonify({"error": "Invalid index_id"}), 400
+
+    if "image" not in request.files:
+        return jsonify({"error": "No file part"}), 400
+
+    file = request.files["image"]
+    if file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+        # Ensure unique filename
+        if os.path.exists(filepath):
+            name, ext = os.path.splitext(filename)
+            filename = f"{name}_{uuid.uuid4().hex}{ext}"
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+        file.save(filepath)
+        image_url = f"/{filepath}"
+
+        # Determine sub-collection
+        col_name = f"{entry_type}_entries"
+        if col_name not in mongo.db.list_collection_names():
+            col_name = entry_type
+        collection = mongo.db.get_collection(col_name)
+
+        # Update the entry with the image URL
+        result = collection.update_one(
+            {"indexId": obj_id},
+            {"$set": {"imageUrl": image_url}}
+        )
+
+        if result.matched_count == 0:
+            return jsonify({"error": "Entry not found"}), 404
+
+        return jsonify({"message": "Image uploaded", "imageUrl": image_url}), 200
+
+    return jsonify({"error": "Invalid file type"}), 400

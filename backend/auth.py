@@ -15,4 +15,5 @@ def make_user_doc(username, email, pw_plain, role="user"):
         "email":    email,
         "password_hash": hash_password(pw_plain),
         "role":     role,
+        "profilePicture": "",
     }

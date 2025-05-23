@@ -10,8 +10,52 @@ from flask_jwt_extended import (
     unset_jwt_cookies
 )
 from datetime import timedelta
+import os
+from werkzeug.utils import secure_filename
 
+UPLOAD_FOLDER = "static/uploads"
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@auth_bp.route("/upload-profile-picture", methods=["POST"])
+@jwt_required()
+def upload_profile_picture():
+    if "image" not in request.files:
+        return jsonify({"error": "No file part"}), 400
+
+    file = request.files["image"]
+
+    if file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+        # If filename exists, append a UUID
+        if os.path.exists(filepath):
+            name, ext = os.path.splitext(filename)
+            filename = f"{name}_{uuid.uuid4().hex}{ext}"
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+        file.save(filepath)
+
+        # Update MongoDB
+        user_id = get_jwt_identity()
+        image_path = f"/{filepath}"  # relative path to static
+
+        mongo.db.users.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"profilePicture": image_path}}
+        )
+
+        return jsonify({"message": "Image uploaded", "imageUrl": image_path}), 200
+
+    return jsonify({"error": "Invalid file type"}), 400
 
 @auth_bp.route("/register", methods=["POST"])
 def register():

@@ -6,14 +6,27 @@ import { API_BASE } from "../config";
 const CategoryModal = ({ isOpen, onClose }) => {
   const [categories, setCategories] = useState([]);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetch(`${API_BASE}/categories`)
-        .then((res) => res.json())
-        .then((data) => setCategories(data.map(c => c.name)))
-        .catch(console.error);
-    }
-  }, [isOpen]);
+useEffect(() => {
+  if (isOpen) {
+    fetch(`${API_BASE}/categories`)
+      .then((res) => res.json())
+      .then((data) => {
+        // 🔍 Handle either structure: objects or raw strings
+        if (Array.isArray(data)) {
+          if (typeof data[0] === "string") {
+            setCategories(data); // simple string list
+          } else if (typeof data[0] === "object" && data[0].name) {
+            setCategories(data.map(c => c.name)); // extract from objects
+          } else {
+            console.warn("Unexpected category data shape:", data);
+            setCategories([]);
+          }
+        }
+      })
+      .catch(console.error);
+  }
+}, [isOpen]);
+
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>

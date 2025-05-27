@@ -63,13 +63,23 @@ def register():
     if not all(k in data for k in ("username", "email", "password")):
         return jsonify({"error": "Missing fields"}), 400
 
-    user_doc = make_user_doc(data["username"], data["email"], data["password"])
+    profile_pic = data.get("profilePicture", "")
+
+    user_doc = {
+        "username": data["username"],
+        "email": data["email"],
+        "password_hash": hash_password(data["password"]),
+        "role": "user",
+        "profilePicture": profile_pic
+    }
+
     try:
         res = mongo.db.users.insert_one(user_doc)
     except Exception:
         return jsonify({"error": "Username or email already exists"}), 409
 
     return jsonify({"message": "User created", "id": str(res.inserted_id)}), 201
+
 
 @auth_bp.route("/login", methods=["POST", "OPTIONS"])
 def login():
@@ -124,6 +134,8 @@ def update_account():
         update_fields["email"] = data["email"]
     if "password" in data:
         update_fields["password_hash"] = hash_password(data["password"])
+    if "profilePicture" in data:
+        update_fields["profilePicture"] = data["profilePicture"]    
 
     try:
         result = mongo.db.users.update_one({"_id": ObjectId(user_id)}, {"$set": update_fields})

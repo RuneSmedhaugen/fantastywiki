@@ -26,6 +26,7 @@ const DynamicEntryView = ({ entry }) => {
   }
 
   return (
+    console.log("Rendering DynamicEntryView with entry:", entry),
     <div className="flex flex-col lg:flex-row gap-8 bg-black/40 border border-violet-600 backdrop-blur-md p-6 rounded-xl shadow-lg text-white">
       {/* Main content */}
       <div className="flex-1 space-y-8">

@@ -71,16 +71,13 @@ def get_entry(entry_type, index_id):
 
 @entry_bp.route('/entry', methods=['POST'])
 def create_entry():
-    """
-    Create a new entry: insert into sub-collection and index
-    Expected JSON: { type, title, summary, details: {...}, createdBy }
-    """
     data = request.get_json() or {}
     entry_type = data.get('type')
     title = data.get('title')
     summary = data.get('summary')
     details = data.get('details', {})
     creator = data.get('createdBy', 'unknown')
+    image_url = data.get('imageUrl', '')  # <-- ADD THIS LINE
 
     if entry_type not in VALID_TYPES:
         return jsonify({'error': 'Invalid entry type'}), 400
@@ -105,13 +102,15 @@ def create_entry():
 
     # Insert into sub-collection
     sub_doc = {
-    'indexId': idx_res.inserted_id,
-    'details': details,
-    'sections': data.get('sections', [])
-}
+        'indexId': idx_res.inserted_id,
+        'details': details,
+        'sections': data.get('sections', []),
+        'imageUrl': image_url  # <-- ADD THIS LINE
+    }
     sub_col.insert_one(sub_doc)
 
     return jsonify({'message': 'Entry created', 'indexId': str(idx_res.inserted_id)}), 201
+
 
 @entry_bp.route('/entry/<entry_type>/<string:index_id>', methods=['DELETE'])
 def delete_entry(entry_type, index_id):
@@ -163,10 +162,6 @@ def search_entries():
 
 @entry_bp.route('/entry/<entry_type>/<string:index_id>', methods=['PUT'])
 def edit_entry(entry_type, index_id):
-    """
-    Edit an existing entry in both the index and sub-collection.
-    Expects JSON: { title, summary, details: {...}, sections: [...] }
-    """
     if entry_type not in VALID_TYPES:
         return jsonify({'error': 'Invalid entry type'}), 400
 
@@ -180,6 +175,7 @@ def edit_entry(entry_type, index_id):
     summary = data.get('summary')
     details = data.get('details', {})
     sections = data.get('sections', [])
+    image_url = data.get('imageUrl')  # <-- ADD THIS LINE
 
     # Update index document
     index_update = {}
@@ -200,12 +196,15 @@ def edit_entry(entry_type, index_id):
     if details is not None:
         sub_update['details'] = details
     sub_update['sections'] = sections
+    if image_url is not None:  # <-- ADD THIS CHECK
+        sub_update['imageUrl'] = image_url
 
     res = sub_col.update_one({'indexId': idx}, {'$set': sub_update})
     if res.matched_count == 0:
         return jsonify({'error': 'Entry not found'}), 404
 
     return jsonify({'message': 'Entry updated'}), 200
+
 
 UPLOAD_FOLDER = "static/uploads"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
@@ -243,7 +242,10 @@ def upload_entry_image(entry_type, index_id):
             filepath = os.path.join(UPLOAD_FOLDER, filename)
 
         file.save(filepath)
-        image_url = f"/{filepath}"
+
+        # Generate web URL for image
+        image_url = os.path.join("static", "uploads", filename).replace("\\", "/")
+        image_url = "/" + image_url.lstrip("/")
 
         # Determine sub-collection
         col_name = f"{entry_type}_entries"
@@ -262,4 +264,5 @@ def upload_entry_image(entry_type, index_id):
 
         return jsonify({"message": "Image uploaded", "imageUrl": image_url}), 200
 
-    return jsonify({"error": "Invalid file type"}), 400
+
+        return jsonify({"error": "Invalid file type"}), 400

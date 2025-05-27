@@ -5,6 +5,7 @@ from routes.auth_routes import auth_bp
 from routes.entry_routes import entry_bp
 from routes.category_routes import category_bp
 from flask_jwt_extended import JWTManager
+from flask import send_from_directory
 
 app = Flask(__name__)
 
@@ -18,6 +19,10 @@ app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 app.config["JWT_COOKIE_SECURE"] = False
 app.config["JWT_COOKIE_CSRF_PROTECT"] = False
 jwt = JWTManager(app)
+
+@app.route("/static/<path:filename>")
+def serve_uploaded_image(filename):
+    return send_from_directory("static/uploads", filename)
 
 # Register blueprints
 app.register_blueprint(auth_bp)

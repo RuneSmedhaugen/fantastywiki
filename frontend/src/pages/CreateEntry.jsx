@@ -94,7 +94,7 @@ const CreateEntry = () => {
         }
       }
 
-      navigate("/entries");
+      navigate(-1);
     } catch (err) {
       setError("Network error");
       console.error(err);

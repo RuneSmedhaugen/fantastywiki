@@ -8,12 +8,13 @@ const EditEntry = () => {
   const [loading, setLoading] = useState(true);
   const [entry, setEntry] = useState(null);
   const [error, setError] = useState("");
-
-  // Form state
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [fields, setFields] = useState([{ key: "", value: "" }]);
   const [sections, setSections] = useState([{ title: "", content: "" }]);
+  const [imageFile, setImageFile] = useState(null);
+  const [imageUrl, setImageUrl] = useState(null);
+  const [imageActionMsg, setImageActionMsg] = useState("");
 
   // Fetch entry data on mount
   useEffect(() => {
@@ -33,17 +34,17 @@ const EditEntry = () => {
 
   // Prefill form state when entry is loaded
   useEffect(() => {
-  if (entry) {
-    console.log(entry);
-    setTitle(entry.title || "");
-    setSummary(entry.summary || "");
-    const detailsArr = entry.details
-      ? Object.entries(entry.details).map(([key, value]) => ({ key, value }))
-      : [{ key: "", value: "" }];
-    setFields(detailsArr.length ? detailsArr : [{ key: "", value: "" }]);
-    setSections(entry.sections && entry.sections.length ? entry.sections : [{ title: "", content: "" }]);
-  }
-}, [entry]);
+    if (entry) {
+      setTitle(entry.title || "");
+      setSummary(entry.summary || "");
+      const detailsArr = entry.details
+        ? Object.entries(entry.details).map(([key, value]) => ({ key, value }))
+        : [{ key: "", value: "" }];
+      setFields(detailsArr.length ? detailsArr : [{ key: "", value: "" }]);
+      setSections(entry.sections && entry.sections.length ? entry.sections : [{ title: "", content: "" }]);
+      setImageUrl(entry.imageUrl || null);
+    }
+  }, [entry]);
 
   // Handlers for fields and sections
   const handleFieldChange = (idx, field, value) => {
@@ -83,9 +84,55 @@ const EditEntry = () => {
         setError(data.error || "Failed to update entry.");
         return;
       }
-      navigate(-1); // Go back or redirect as needed
+      // If a new image is selected, upload it
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append("image", imageFile);
+        const imageRes = await fetch(
+          `${API_BASE}/entry/upload-image/${type}/${id}`,
+          {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          }
+        );
+        const imageData = await imageRes.json();
+        if (!imageRes.ok) {
+          setImageActionMsg("Image upload failed: " + (imageData.error || ""));
+        } else {
+          setImageActionMsg("Image uploaded!");
+          setImageUrl(imageData.imageUrl);
+          setImageFile(null);
+          return;
+        }
+      }
+      navigate(-1);
     } catch {
       setError("Network error.");
+    }
+  };
+
+  // Delete image handler
+  const handleDeleteImage = async () => {
+    if (!window.confirm("Delete the current image?")) return;
+    setImageActionMsg("");
+    try {
+      const res = await fetch(
+        `${API_BASE}/entry/delete-image/${type}/${id}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        setImageActionMsg("Failed to delete image: " + (data.error || ""));
+        return;
+      }
+      setImageActionMsg("Image deleted.");
+      setImageUrl(null);
+    } catch {
+      setImageActionMsg("Network error.");
     }
   };
 
@@ -198,6 +245,36 @@ const EditEntry = () => {
               + Add Section
             </button>
           </div>
+          {/* Image Edit/Delete */}
+          <div>
+            <label className="block text-sm font-medium text-violet-200 mb-2">Image</label>
+            {imageUrl ? (
+              <div className="mb-2">
+                <img
+                  src={"http://localhost:5000" + imageUrl.replace(/\\/g, '/')}
+                  alt={title}
+                  className="w-40 h-auto rounded border border-indigo-500 shadow-md mb-2"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDeleteImage}
+                    className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                  >
+                    Delete Image
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <input
+                type="file"
+                accept="image/*"
+                onChange={e => setImageFile(e.target.files[0])}
+                className="block w-full text-white"
+              />
+            )}
+            {imageActionMsg && <div className="text-green-400 mt-1">{imageActionMsg}</div>}
+          </div>
           <div className="flex gap-4">
             <button
               type="submit"
@@ -215,8 +292,6 @@ const EditEntry = () => {
           </div>
         </form>
       </div>
-      {/* Sidebar (optional, for future use) */}
-      {/* <aside className="w-full md:w-1/3 space-y-6"></aside> */}
     </div>
   );
 };

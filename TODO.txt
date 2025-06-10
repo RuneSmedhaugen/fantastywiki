@@ -1,5 +1,24 @@
 -test edit profile and edit entries
--implement image upload
--css profilepage
--Modal for browsing
+-implement image upload (done)
+-css profilepage (done)
+-Modal for browsing 
+-auto linking
+-forum?
+-admin log
+-draft autosave
+-stats (most viewed entry etc etc)
+-entry relationship graph?  Visualize connections between entries (e.g. people, places, events) as an interactive graph.
+-preview before publishing?
+-release date system?
+-password reset/forgot password
+-global error boundaries frontend
+-test mobile version -> css not finished so no need until we get there
+-archive/soft-delete entries
+-add a edit button to the entry page itself for admins/superadmins
+
+
+NICE TO HAVE
+-contact/support
+-footer (i'm making one regardless but more what should be there)
+-about us page
 -

@@ -14,6 +14,13 @@ import CategoryEntries from './pages/CategoryEntries';
 import EditEntry from './components/EditEntry';
 import SuperAdminPanel from './pages/SuperAdminPanel';
 import './App.css';
+import Footer from './components/Footer';
+import Contact from './pages/Contact';
+import AdminContact from './pages/AdminContact';
+import HandleContact from './pages/HandleContact';
+import AboutUs from './pages/AboutUs';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TOS from './pages/TOS';
 
 
 function App() {
@@ -40,9 +47,16 @@ function App() {
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/superadmin" element={<SuperAdminPanel />} />
           <Route path="/entry/:type/:id" element={<EntryDetail />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/adminContact" element={<AdminContact />} />
+          <Route path="/handlecontact/:id" element={<HandleContact />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TOS />} />
           <Route path="/entries" element={<CategoryEntries />} />
         </Routes>
       </main>
+    <Footer />
     </Router>
   );
 }

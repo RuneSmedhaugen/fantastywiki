@@ -40,6 +40,12 @@ const AdminPanel = () => {
         >
           Create New Entry
         </button>
+        <button
+          className="w-full px-4 py-2 bg-cyan-600 text-white rounded hover:bg-cyan-700"
+          onClick={() => navigate('/admincontact')}
+        >
+          View Contact Tickets
+        </button>
       </div>
       {showEntryManager && (
         <div className="mt-8">

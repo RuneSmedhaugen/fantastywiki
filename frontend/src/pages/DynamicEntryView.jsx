@@ -1,7 +1,20 @@
 import React from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import SidePanel from '../components/SidePanel';
 
 const DynamicEntryView = ({ entry }) => {
+  const navigate = useNavigate();
+  const { type, id } = useParams();
+
+  // Get user from localStorage (or context if you use that)
+  const user = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('user'));
+    } catch {
+      return null;
+    }
+  })();
+
   if (!entry) return <div className="text-center text-gray-400">No entry found.</div>;
 
   const {
@@ -38,7 +51,17 @@ const DynamicEntryView = ({ entry }) => {
     <div className="flex flex-col lg:flex-row gap-8 bg-black/40 border border-violet-600 backdrop-blur-md p-6 rounded-xl shadow-lg text-white">
       {/* Main content */}
       <div className="flex-1 space-y-8">
-        <h1 className="text-4xl font-extrabold text-violet-300">{title}</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-4xl font-extrabold text-violet-300">{title}</h1>
+          {user && (user.role === "admin" || user.role === "superadmin") && (
+            <button
+              className="ml-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-base"
+              onClick={() => navigate(`/edit-entry/${type || entry.type}/${id || entry._id}`)}
+            >
+              Edit
+            </button>
+          )}
+        </div>
         {summary && <p className="text-gray-300 text-lg">{summary}</p>}
 
         <div className="text-sm text-gray-400">

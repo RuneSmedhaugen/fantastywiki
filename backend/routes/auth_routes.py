@@ -222,3 +222,9 @@ def update_user(user_id):
         return jsonify({"error": "Failed to update user", "details": str(e)}), 500
 
     return jsonify({"message": "User updated successfully"}), 200
+
+@auth_bp.route("/cors-test", methods=["POST", "OPTIONS"])
+def cors_test():
+    if request.method == "OPTIONS":
+        return jsonify({"preflight": "OK"}), 200
+    return jsonify({"message": "Actual POST response"}), 200

@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { useNavigate } from "react-router-dom";
 
-const SettingsModal = ({ isOpen, onClose, onLogout }) => {
+const SettingsModal = ({ isOpen, onClose, onShowTickets, onLogout }) => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -68,11 +68,20 @@ const SettingsModal = ({ isOpen, onClose, onLogout }) => {
                     Account Settings
                   </button>
 
+                  <button
+                    onClick={() => {
+                      onClose();
+                      setTimeout(onShowTickets, 300); // Wait for modal close animation
+                    }}
+                    className="w-full text-left px-4 py-2 bg-violet-700/30 border border-violet-400 rounded hover:bg-violet-600/50 transition"
+                  >
+                    My Support Tickets
+                  </button>
+
                   {user &&
                     (user.role === "admin" || user.role === "superadmin") && (
                       <button
                         onClick={() => {
-                          console.log(user.role);
                           onClose();
                           if (user.role === "superadmin") {
                             navigate("/superadmin");

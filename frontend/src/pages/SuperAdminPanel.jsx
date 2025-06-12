@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import EntryManager from '../components/EntryManager';
 import UserManager from '../components/UserManager';
+import { API_BASE } from '../config';
 
 const SuperAdminPanel = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showEntryManager, setShowEntryManager] = useState(false);
   const [showUserManager, setShowUserManager] = useState(false);
+  const [corsTestResult, setCorsTestResult] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -15,6 +17,21 @@ const SuperAdminPanel = () => {
     if (stored) setUser(JSON.parse(stored));
     setLoading(false);
   }, []);
+
+  const handleCorsTest = async () => {
+    setCorsTestResult("Testing...");
+    try {
+      const res = await fetch(`${API_BASE}/auth/cors-test`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" }
+      });
+      const data = await res.json();
+      setCorsTestResult(data.message || JSON.stringify(data));
+    } catch (err) {
+      setCorsTestResult("CORS or network error: " + err.message);
+    }
+  };
 
   if (loading) return <div>Loading...</div>;
   if (!user || user.role !== 'superadmin') return <Navigate to="/" replace />;
@@ -48,6 +65,17 @@ const SuperAdminPanel = () => {
           >
             View Contact Tickets
           </button>
+          <button
+            className="w-full px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition"
+            onClick={handleCorsTest}
+          >
+            Test CORS (POST /auth/cors-test)
+          </button>
+          {corsTestResult && (
+            <div className="mt-2 text-sm text-yellow-300 bg-gray-800 rounded p-2">
+              {corsTestResult}
+            </div>
+          )}
         </div>
         {showEntryManager && (
           <div className="mt-8">

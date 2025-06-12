@@ -1,14 +1,15 @@
-// src/components/Header.jsx
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import SearchBar from "./SearchBar";
 import SettingsModal from "./SettingsModal";
+import UserTicketsModal from "./UserTicketModal"; // <-- Add this import
 import Logo from "../img/archivelogo.png";
 import SearchModal from "./SearchModal";
 import { API_BASE } from "../config";
 
 const Header = () => {
   const [isModalOpen, setModalOpen] = useState(false);
+  const [isTicketsOpen, setTicketsOpen] = useState(false); // <-- Add state for tickets modal
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
@@ -97,7 +98,19 @@ const Header = () => {
               <SettingsModal
                 isOpen={isModalOpen}
                 onClose={() => setModalOpen(false)}
+                onShowTickets={() => {
+                  setModalOpen(false);
+                  setTimeout(() => setTicketsOpen(true), 300);
+                }}
                 onLogout={handleLogout}
+              />
+              <UserTicketsModal
+                isOpen={isTicketsOpen}
+                onClose={() => setTicketsOpen(false)}
+                onBack={() => {
+                  setTicketsOpen(false);
+                  setTimeout(() => setModalOpen(true), 300);
+                }}
               />
             </>
           )}

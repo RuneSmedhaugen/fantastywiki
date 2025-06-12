@@ -11,7 +11,7 @@ const HandleContact = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch(`${API_BASE}tickets/${id}`, { credentials: "include" })
+    fetch(`${API_BASE}/tickets/${id}`, { credentials: "include" })
       .then(res => res.json())
       .then(data => setTicket(data))
       .catch(() => setError("Failed to load ticket."));
@@ -22,7 +22,7 @@ const HandleContact = () => {
     setError("");
     setSuccess("");
     try {
-      const res = await fetch(`${API_BASE}tickets/${id}/reply`, {
+      const res = await fetch(`${API_BASE}/tickets/${id}/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -34,7 +34,7 @@ const HandleContact = () => {
         setSuccess("Reply sent!");
         setReply("");
         // Reload ticket to show new message
-        const updated = await fetch(`/api/tickets/${id}`, { credentials: "include" }).then(r => r.json());
+        const updated = await fetch(`${API_BASE}/tickets/${id}`, { credentials: "include" }).then(r => r.json());
         setTicket(updated);
       }
     } catch {
@@ -45,7 +45,7 @@ const HandleContact = () => {
   const handleDelete = async () => {
     if (!window.confirm("Delete this ticket?")) return;
     try {
-      const res = await fetch(`/api/tickets/${id}`, {
+      const res = await fetch(`${API_BASE}/tickets/${id}`, {
         method: "DELETE",
         credentials: "include",
       });

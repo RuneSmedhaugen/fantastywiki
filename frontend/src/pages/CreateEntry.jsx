@@ -1,16 +1,44 @@
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { API_BASE } from "../config";
 
 const CreateEntry = () => {
   const { type } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const draftIdFromUrl = params.get("draft");
+
   const [fields, setFields] = useState([{ key: "", value: "" }]);
   const [sections, setSections] = useState([{ title: "", content: "" }]);
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [error, setError] = useState("");
   const [imageFile, setImageFile] = useState(null);
+  const [draftId, setDraftId] = useState(draftIdFromUrl || null);
+  const [autosaveMsg, setAutosaveMsg] = useState("");
+  const autosaveTimeout = useRef(null);
+
+  // Load draft if draftIdFromUrl is present
+  useEffect(() => {
+    if (draftIdFromUrl) {
+      fetch(`${API_BASE}/drafts/${draftIdFromUrl}`, { credentials: "include" })
+        .then(res => res.json())
+        .then(draft => {
+          setTitle(draft.title || "");
+          setSummary(draft.summary || "");
+          setFields(
+            draft.details
+              ? Object.entries(draft.details).map(([key, value]) => ({ key, value }))
+              : [{ key: "", value: "" }]
+          );
+          setSections(draft.sections && draft.sections.length ? draft.sections : [{ title: "", content: "" }]);
+          setDraftId(draft._id);
+        })
+        .catch(() => {});
+    }
+    // eslint-disable-next-line
+  }, [draftIdFromUrl]);
 
   // Info details handlers
   const handleFieldChange = (idx, field, value) => {
@@ -34,6 +62,42 @@ const CreateEntry = () => {
     setSections([...sections, { title: "", content: "" }]);
   const handleRemoveSection = (idx) =>
     setSections(sections.filter((_, i) => i !== idx));
+
+  // --- AUTOSAVE DRAFT LOGIC ---
+  useEffect(() => {
+    if (autosaveTimeout.current) clearTimeout(autosaveTimeout.current);
+
+    autosaveTimeout.current = setTimeout(async () => {
+      const details = {};
+      fields.forEach((f) => {
+        if (f.key) details[f.key] = f.value;
+      });
+      try {
+        const res = await fetch(`${API_BASE}/drafts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            _id: draftId,
+            title,
+            summary,
+            details,
+            sections,
+            entryType: type,
+          }),
+        });
+        const data = await res.json();
+        if (data.draftId) setDraftId(data.draftId);
+        setAutosaveMsg("Draft autosaved");
+        setTimeout(() => setAutosaveMsg(""), 1500);
+      } catch {
+        setAutosaveMsg("Autosave failed");
+      }
+    }, 2000);
+
+    return () => clearTimeout(autosaveTimeout.current);
+    // eslint-disable-next-line
+  }, [title, summary, fields, sections, draftId, type]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -94,6 +158,14 @@ const CreateEntry = () => {
         }
       }
 
+      // Remove draft after successful creation
+      if (draftId) {
+        await fetch(`${API_BASE}/drafts/${draftId}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+      }
+
       navigate(-1);
     } catch (err) {
       setError("Network error");
@@ -107,6 +179,9 @@ const CreateEntry = () => {
         <h1 className="text-4xl font-bold text-violet-300 drop-shadow-lg">
           Create New {type.charAt(0).toUpperCase() + type.slice(1)}
         </h1>
+        {autosaveMsg && (
+          <div className="text-xs text-green-400 mb-2">{autosaveMsg}</div>
+        )}
         {error && <p className="text-red-500 mb-4">{error}</p>}
         <form
           onSubmit={handleSubmit}
@@ -232,22 +307,22 @@ const CreateEntry = () => {
               + Add Section
             </button>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-violet-200">
+              Image (optional)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImageFile(e.target.files[0])}
+              className="mt-1 block w-full text-white"
+            />
+          </div>
           <div className="flex gap-4">
             <button
               type="submit"
               className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
             >
-              <div>
-                <label className="block text-sm font-medium text-violet-200">
-                  Image (optional)
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setImageFile(e.target.files[0])}
-                  className="mt-1 block w-full text-white"
-                />
-              </div>
               Create
             </button>
             <button

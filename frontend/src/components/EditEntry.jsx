@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { API_BASE } from "../config";
 
 const EditEntry = () => {
   const { type, id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const draftIdFromUrl = params.get("draft");
+
   const [loading, setLoading] = useState(true);
   const [entry, setEntry] = useState(null);
   const [error, setError] = useState("");
@@ -15,26 +19,54 @@ const EditEntry = () => {
   const [imageFile, setImageFile] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
   const [imageActionMsg, setImageActionMsg] = useState("");
+  const [draftId, setDraftId] = useState(draftIdFromUrl || null);
+  const [autosaveMsg, setAutosaveMsg] = useState("");
+  const autosaveTimeout = useRef(null);
 
-  // Fetch entry data on mount
+  // Load draft if draftIdFromUrl is present, else load entry
   useEffect(() => {
-    const fetchEntry = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/entry/${type}/${id}`);
-        const data = await res.json();
-        setEntry(data);
-      } catch {
-        setError("Failed to load entry.");
-      } finally {
-        setLoading(false);
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      if (draftIdFromUrl) {
+        try {
+          const res = await fetch(`${API_BASE}/drafts/${draftIdFromUrl}`, { credentials: "include" });
+          if (!res.ok) throw new Error("Draft not found");
+          const draft = await res.json();
+          setTitle(draft.title || "");
+          setSummary(draft.summary || "");
+          setFields(
+            draft.details
+              ? Object.entries(draft.details).map(([key, value]) => ({ key, value }))
+              : [{ key: "", value: "" }]
+          );
+          setSections(draft.sections && draft.sections.length ? draft.sections : [{ title: "", content: "" }]);
+          setImageUrl(draft.imageUrl || null);
+          setDraftId(draft._id);
+        } catch {
+          setError("Failed to load draft.");
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        try {
+          const res = await fetch(`${API_BASE}/entry/${type}/${id}`);
+          const data = await res.json();
+          setEntry(data);
+        } catch {
+          setError("Failed to load entry.");
+        } finally {
+          setLoading(false);
+        }
       }
     };
-    fetchEntry();
-  }, [type, id]);
+    load();
+    // eslint-disable-next-line
+  }, [type, id, draftIdFromUrl]);
 
-  // Prefill form state when entry is loaded
+  // Prefill form state when entry is loaded (if not loading a draft)
   useEffect(() => {
-    if (entry) {
+    if (entry && !draftIdFromUrl) {
       setTitle(entry.title || "");
       setSummary(entry.summary || "");
       const detailsArr = entry.details
@@ -44,7 +76,46 @@ const EditEntry = () => {
       setSections(entry.sections && entry.sections.length ? entry.sections : [{ title: "", content: "" }]);
       setImageUrl(entry.imageUrl || null);
     }
-  }, [entry]);
+  }, [entry, draftIdFromUrl]);
+
+  // --- AUTOSAVE DRAFT LOGIC ---
+  useEffect(() => {
+    if (autosaveTimeout.current) clearTimeout(autosaveTimeout.current);
+
+    if (!loading) {
+      autosaveTimeout.current = setTimeout(async () => {
+        const details = {};
+        fields.forEach((f) => {
+          if (f.key) details[f.key] = f.value;
+        });
+        try {
+          const res = await fetch(`${API_BASE}/drafts`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              _id: draftId,
+              title,
+              summary,
+              details,
+              sections,
+              imageUrl,
+              entryId: id,
+              entryType: type,
+            }),
+          });
+          const data = await res.json();
+          if (data.draftId) setDraftId(data.draftId);
+          setAutosaveMsg("Draft autosaved");
+          setTimeout(() => setAutosaveMsg(""), 1500);
+        } catch {
+          setAutosaveMsg("Autosave failed");
+        }
+      }, 2000);
+    }
+    return () => clearTimeout(autosaveTimeout.current);
+    // eslint-disable-next-line
+  }, [title, summary, fields, sections, imageUrl, draftId, loading]);
 
   // Handlers for fields and sections
   const handleFieldChange = (idx, field, value) => {
@@ -106,6 +177,13 @@ const EditEntry = () => {
           return;
         }
       }
+      // Remove draft after successful save
+      if (draftId) {
+        await fetch(`${API_BASE}/drafts/${draftId}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+      }
       navigate(-1);
     } catch {
       setError("Network error.");
@@ -145,6 +223,9 @@ const EditEntry = () => {
       <div className="flex-1 space-y-8">
         <h1 className="text-4xl font-bold text-violet-300 drop-shadow-lg">Edit Entry</h1>
         <form onSubmit={handleSubmit} className="space-y-6 bg-black/40 border border-violet-600 backdrop-blur-md p-6 rounded-xl shadow-lg">
+          {autosaveMsg && (
+            <div className="text-xs text-green-400 mb-2">{autosaveMsg}</div>
+          )}
           <div>
             <label className="block text-sm font-medium text-violet-200">Title</label>
             <input

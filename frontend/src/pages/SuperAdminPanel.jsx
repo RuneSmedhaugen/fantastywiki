@@ -9,6 +9,9 @@ const SuperAdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [showEntryManager, setShowEntryManager] = useState(false);
   const [showUserManager, setShowUserManager] = useState(false);
+  const [showDrafts, setShowDrafts] = useState(false);
+  const [drafts, setDrafts] = useState([]);
+  const [draftsLoading, setDraftsLoading] = useState(false);
   const [corsTestResult, setCorsTestResult] = useState("");
   const navigate = useNavigate();
 
@@ -31,6 +34,18 @@ const SuperAdminPanel = () => {
     } catch (err) {
       setCorsTestResult("CORS or network error: " + err.message);
     }
+  };
+
+  const fetchDrafts = async () => {
+    setDraftsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/drafts`, { credentials: "include" });
+      const data = await res.json();
+      setDrafts(data);
+    } catch {
+      setDrafts([]);
+    }
+    setDraftsLoading(false);
   };
 
   if (loading) return <div>Loading...</div>;
@@ -71,12 +86,58 @@ const SuperAdminPanel = () => {
           >
             Test CORS (POST /auth/cors-test)
           </button>
+          <button
+            className="w-full px-4 py-2 bg-violet-600 text-white rounded hover:bg-violet-700 transition"
+            onClick={() => {
+              setShowDrafts(true);
+              fetchDrafts();
+            }}
+          >
+            View All Drafts
+          </button>
           {corsTestResult && (
             <div className="mt-2 text-sm text-yellow-300 bg-gray-800 rounded p-2">
               {corsTestResult}
             </div>
           )}
         </div>
+        {showDrafts && (
+          <div className="bg-gray-900 border border-violet-700 rounded-lg p-4 mt-4">
+            <button
+              className="mb-2 px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600"
+              onClick={() => setShowDrafts(false)}
+            >
+              &larr; Back
+            </button>
+            {draftsLoading ? (
+              <div>Loading drafts...</div>
+            ) : drafts.length === 0 ? (
+              <div className="text-gray-400">No drafts found.</div>
+            ) : (
+              <ul>
+                {drafts.map(draft => (
+                  <li key={draft._id} className="mb-2 flex items-center gap-2">
+                    <span className="font-bold text-violet-300">{draft.title || "(Untitled)"}</span>
+                    <span className="ml-2 text-xs text-gray-400">by {draft.authorId}</span>
+                    <span className="ml-2 text-xs text-gray-400">{new Date(draft.updatedAt).toLocaleString()}</span>
+                    <button
+                      className="ml-4 px-2 py-1 bg-green-700 text-white rounded hover:bg-green-800"
+                      onClick={() => {
+                        if (draft.entryId) {
+                          navigate(`/edit-entry/${draft.entryType || "entry"}/${draft.entryId}?draft=${draft._id}`);
+                        } else {
+                          navigate(`/create-entry/${draft.entryType || "entry"}?draft=${draft._id}`);
+                        }
+                      }}
+                    >
+                      Continue Editing
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
         {showEntryManager && (
           <div className="mt-8">
             <EntryManager onEdit={entry => navigate(`/edit-entry/${entry.type}/${entry._id}`)} />

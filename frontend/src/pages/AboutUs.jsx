@@ -30,7 +30,7 @@ const AboutUs = () => (
       </div>
       <div>
         <h2 className="text-2xl font-semibold text-cyan-200 mb-1">Orbilo</h2>
-        <p className="text-gray-400 mb-1">28 years old • Austria/Poland • Male</p>
+        <p className="text-gray-400 mb-1">29 years old • Austria/Poland • Male</p>
         <p className="text-gray-300">
           The CEO (Chief Entry Officer) and creative director, Orbilo brings the banter, the stories, and the “what if we did this?” energy. Gamer, planner, and the only person who can out-sarcasm Swoyer. If you see a wild plot twist, blame him. He's also bad.
         </p>

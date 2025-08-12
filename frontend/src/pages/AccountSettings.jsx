@@ -49,11 +49,10 @@ const AccountSettings = () => {
         return;
       }
 
-      const updatedUser = await res.json();
       localStorage.setItem('user', JSON.stringify({ ...user, ...form }));
       setUser({ ...user, ...form });
       alert('Account updated successfully!');
-    } catch (err) {
+    } catch {
       alert('An error occurred while updating your account.');
     }
   };
@@ -76,7 +75,7 @@ const AccountSettings = () => {
       localStorage.removeItem('user');
       localStorage.removeItem('token');
       window.location.href = '/login';
-    } catch (err) {
+    } catch {
       alert('An error occurred while deleting your account.');
     }
   };

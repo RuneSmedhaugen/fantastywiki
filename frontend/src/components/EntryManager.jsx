@@ -12,7 +12,7 @@ const EntryManager = ({ onEdit }) => {
         const res = await fetch(`${API_BASE}/entries`);
         const data = await res.json();
         setEntries(data);
-      } catch (err) {
+      } catch {
         setError("Failed to fetch entries.");
       } finally {
         setLoading(false);

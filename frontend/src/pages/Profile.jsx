@@ -57,10 +57,6 @@ const Profile = () => {
                   <span className="font-semibold text-cyan-300">Role:</span>{" "}
                   <span className="text-gray-200">{user.role}</span>
                 </p>
-                <p>
-                  <span className="font-semibold text-cyan-300">User ID:</span>{" "}
-                  <span className="text-gray-200">{user.id}</span>
-                </p>
               </div>
             </div>
           </details>

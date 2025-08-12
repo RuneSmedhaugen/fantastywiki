@@ -61,7 +61,6 @@ const EditEntry = () => {
       }
     };
     load();
-    // eslint-disable-next-line
   }, [type, id, draftIdFromUrl]);
 
   // Prefill form state when entry is loaded (if not loading a draft)

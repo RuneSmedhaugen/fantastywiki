@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from db import mongo
+import uuid
 from auth import make_user_doc, verify_password, hash_password
 from bson import ObjectId
 from flask_jwt_extended import (

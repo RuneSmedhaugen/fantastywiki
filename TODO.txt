@@ -1,6 +1,4 @@
 -test edit profile and edit entries
--implement image upload (done)
--css profilepage (done)
 -Modal for browsing 
 -auto linking
 -forum?
@@ -14,8 +12,7 @@
 -global error boundaries frontend
 -test mobile version -> css not finished so no need until we get there
 -archive/soft-delete entries
--add a edit button to the entry page itself for admins/superadmins
-
+-profile pictures
 
 NICE TO HAVE
 -contact/support

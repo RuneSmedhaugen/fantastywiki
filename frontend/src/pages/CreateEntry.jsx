@@ -37,7 +37,6 @@ const CreateEntry = () => {
         })
         .catch(() => {});
     }
-    // eslint-disable-next-line
   }, [draftIdFromUrl]);
 
   // Info details handlers
@@ -96,7 +95,6 @@ const CreateEntry = () => {
     }, 2000);
 
     return () => clearTimeout(autosaveTimeout.current);
-    // eslint-disable-next-line
   }, [title, summary, fields, sections, draftId, type]);
 
   const handleSubmit = async (e) => {

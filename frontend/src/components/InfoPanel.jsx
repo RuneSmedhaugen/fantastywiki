@@ -7,7 +7,16 @@ const InfoPanel = ({ entry }) => {
   const formattedDate = createdAt ? new Date(createdAt).toLocaleDateString() : null;
   const [fieldsSchema, setFieldsSchema] = useState([]);
 
-  useEffect(() => {
+  const formatDate = (dateString) => {
+  if (!dateString) return "";
+  const d = new Date(dateString);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}.${month}.${year}`;
+};
+
+ useEffect(() => {
     // fetch category schema for dynamic fields
     fetch(`${API_BASE}/categories`)
       .then(res => res.json())
@@ -36,7 +45,7 @@ const InfoPanel = ({ entry }) => {
         <div key={field.name} className="space-y-1">
           <span className="font-semibold">{field.label}:</span>{' '}
           {field.type === 'date' && details[field.name]
-            ? new Date(details[field.name]).toLocaleDateString()
+            ? formatDate(details[field.name])
             : details[field.name]}
         </div>
       ))}

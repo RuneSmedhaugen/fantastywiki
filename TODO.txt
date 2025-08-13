@@ -12,7 +12,7 @@
 -global error boundaries frontend
 -test mobile version -> css not finished so no need until we get there
 -archive/soft-delete entries
--profile pictures
+-profile pictures -> fixed
 
 NICE TO HAVE
 -contact/support

@@ -58,32 +58,48 @@ const AccountSettings = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch(`${API_BASE}/auth/update-account`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          
-        },
-        credentials: 'include',
-        body: JSON.stringify(form),
-      });
+const handleSave = async (e) => {
+  e.preventDefault();
 
-      if (!res.ok) {
-        const error = await res.json();
-        alert(error.error || 'Failed to update account');
-        return;
-      }
-
-      localStorage.setItem('user', JSON.stringify({ ...user, ...form }));
-      setUser({ ...user, ...form });
-      alert('Account updated successfully!');
-    } catch {
-      alert('An error occurred while updating your account.');
+  // Find only changed fields
+  const updatedFields = {};
+  Object.keys(form).forEach((key) => {
+    // If field has changed and isn't empty
+    if (form[key] !== user[key] && form[key] !== "") {
+      updatedFields[key] = form[key];
     }
-  };
+  });
+
+  // If nothing changed, skip request
+  if (Object.keys(updatedFields).length === 0) {
+    alert("No changes to save.");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/update-account`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(updatedFields),
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      alert(error.error || 'Failed to update account');
+      return;
+    }
+
+    // Merge changes into user state + localStorage
+    const newUser = { ...user, ...updatedFields };
+    localStorage.setItem('user', JSON.stringify(newUser));
+    setUser(newUser);
+
+    alert('Account updated successfully!');
+  } catch {
+    alert('An error occurred while updating your account.');
+  }
+};
 
   const handleDelete = async () => {
     try {

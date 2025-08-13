@@ -3,7 +3,7 @@
 -auto linking
 -forum?
 -admin log
--draft autosave
+-draft autosave -> fixed
 -stats (most viewed entry etc etc)
 -entry relationship graph?  Visualize connections between entries (e.g. people, places, events) as an interactive graph.
 -preview before publishing?

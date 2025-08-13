@@ -5,7 +5,8 @@ import { API_BASE } from '../config';
 
 const AccountSettings = () => {
   const [user, setUser] = useState(null);
-  const [form, setForm] = useState({ username: '', email: '', password: '' });
+  const [form, setForm] = useState({ username: "", email: "", profilePicture: "" });
+  const [imageFile, setImageFile] = useState(null);
   const [showWarning, setShowWarning] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -14,10 +15,36 @@ const AccountSettings = () => {
     if (stored) {
       const u = JSON.parse(stored);
       setUser(u);
-      setForm({ username: u.username, email: u.email, password: '' });
+      setForm({ username: u.username, email: u.email, password: '', profilePicture: JSON.parse(stored).profilePicture || "", });
     }
     setLoading(false);
   }, []);
+
+   // Upload profile picture file
+  useEffect(() => {
+    if (imageFile) {
+      const upload = async () => {
+        const formData = new FormData();
+        formData.append("image", imageFile);
+        const res = await fetch(`${API_BASE}/auth/upload-profile-picture`, {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        });
+        const data = await res.json();
+        if (res.ok && data.imageUrl) {
+          setForm((prev) => ({ ...prev, profilePicture: data.imageUrl }));
+          setUser((prev) => ({ ...prev, profilePicture: data.imageUrl }));
+          localStorage.setItem("user", JSON.stringify({ ...user, profilePicture: data.imageUrl }));
+        } else {
+          alert(data.error || "Failed to upload image");
+        }
+        setImageFile(null);
+      };
+      upload();
+    }
+    // eslint-disable-next-line
+  }, [imageFile]);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -38,8 +65,9 @@ const AccountSettings = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          credentials: 'include',
+          
         },
+        credentials: 'include',
         body: JSON.stringify(form),
       });
 
@@ -62,8 +90,8 @@ const AccountSettings = () => {
       const res = await fetch(`${API_BASE}/delete-account`, {
         method: 'DELETE',
         headers: {
-          credentials: 'include',
         },
+        credentials: 'include',
       });
 
       if (!res.ok) {
@@ -79,6 +107,7 @@ const AccountSettings = () => {
       alert('An error occurred while deleting your account.');
     }
   };
+
 
   return (
     <div className="flex flex-col md:flex-row gap-8 p-6 max-w-screen-xl mx-auto text-white">
@@ -115,6 +144,32 @@ const AccountSettings = () => {
               className="mt-1 block w-full p-2 border rounded bg-gray-900 text-gray-100"
             />
           </div>
+            <label className="block mb-2">
+    Profile Picture (upload)
+    <input
+      type="file"
+      accept="image/*"
+      onChange={e => setImageFile(e.target.files[0])}
+      className="block w-full"
+    />
+  </label>
+  <label className="block mb-2">
+    Or use image URL
+    <input
+      type="text"
+      name="profilePicture"
+      value={form.profilePicture}
+      onChange={handleChange}
+      className="block w-full p-2 border rounded"
+    />
+  </label>
+  {form.profilePicture && (
+    <img
+      src={form.profilePicture.startsWith("/") ? `http://localhost:5000${form.profilePicture}` : form.profilePicture}
+      alt="Profile"
+      className="w-24 h-24 rounded-full border mb-2"
+    />
+  )}
           <button
             type="submit"
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"

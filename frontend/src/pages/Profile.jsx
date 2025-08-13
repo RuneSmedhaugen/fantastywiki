@@ -19,6 +19,12 @@ const Profile = () => {
     return <Navigate to="/login" replace />;
   }
 
+  const profilePictureUrl = user?.profilePicture
+    ? user.profilePicture.startsWith("/")
+      ? `http://localhost:5000${user.profilePicture}`
+      : user.profilePicture
+    : null;
+
   return (
     <div className="flex flex-col md:flex-row gap-8 p-6 max-w-screen-xl mx-auto text-white">
       <div className="flex-1 space-y-8">
@@ -31,9 +37,9 @@ const Profile = () => {
             <div className="px-6 py-4 space-y-4 flex flex-col md:flex-row md:items-center">
               <div className="flex-shrink-0 flex items-center justify-center mb-4 md:mb-0 md:mr-8">
                 <span className="inline-block h-24 w-24 rounded-full bg-gray-800 border-4 border-violet-500 overflow-hidden shadow-lg">
-                  {user.profilePicture ? (
+                  {profilePictureUrl ? (
                     <img
-                      src={user.profilePicture}
+                      src={profilePictureUrl}
                       alt="Profile"
                       className="object-cover h-full w-full"
                     />

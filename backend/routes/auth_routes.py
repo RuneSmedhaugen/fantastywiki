@@ -13,11 +13,63 @@ from flask_jwt_extended import (
 from datetime import timedelta
 import os
 from werkzeug.utils import secure_filename
+from itsdangerous import URLSafeTimedSerializer
+from utils.email_utils import send_email
 
+serializer = URLSafeTimedSerializer(os.getenv("SECRET_KEY"))
 UPLOAD_FOLDER = "static/uploads"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
+
+@auth_bp.route("/forgot-password", methods=["POST"])
+def forgot_password():
+    data = request.get_json()
+    email = data.get("email")
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    # TODO: Query DB to see if user exists
+    user = {"id": 1, "email": email}  # TEMP for testing
+    if not user:
+        return jsonify({"message": "If that email exists, a reset link has been sent"}), 200
+
+    token = serializer.dumps(email, salt="password-reset-salt")
+    reset_url = f"http://localhost:5173/reset-password/{token}"
+
+    html_content = f"""
+    <h2>Password Reset Request</h2>
+    <p>Click the link below to reset your password:</p>
+    <a href="{reset_url}">{reset_url}</a>
+    <p>This link expires in 1 hour.</p>
+    """
+    send_email(email, "Password Reset Request", html_content)
+
+    return jsonify({"message": "If that email exists, a reset link has been sent"}), 200
+
+
+@auth_bp.route("/reset-password/<token>", methods=["POST"])
+def reset_password(token):
+    try:
+        email = serializer.loads(token, salt="password-reset-salt", max_age=3600)
+    except SignatureExpired:
+        return jsonify({"error": "Token expired"}), 400
+    except BadSignature:
+        return jsonify({"error": "Invalid token"}), 400
+
+    data = request.get_json()
+    new_password = data.get("password")
+    if not new_password:
+        return jsonify({"error": "Password required"}), 400
+
+    # TODO: Hash and update in DB
+    print(f"🔐 Would reset password for {email} to {new_password}")
+
+    return jsonify({"message": "Password updated successfully"}), 200
+
+
+
+
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS

@@ -1,4 +1,4 @@
--test edit profile and edit entries
+-test edit profile and edit entries -> fixed
 -Modal for browsing 
 -auto linking
 -forum?

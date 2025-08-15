@@ -1,12 +1,13 @@
-// src/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../config";
+import ResetPassword from "../components/ResetPassword";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showResetModal, setShowResetModal] = useState(false); // Modal toggle
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -66,7 +67,7 @@ const Login = () => {
           />
         </label>
 
-        <label className="block mb-6">
+        <label className="block mb-2">
           <span className="text-sm text-indigo-200">Password</span>
           <input
             type="password"
@@ -76,6 +77,17 @@ const Login = () => {
             className="mt-1 w-full px-4 py-2 bg-gray-800 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </label>
+
+        {/* Forgot password button */}
+        <div className="text-right mb-6">
+          <button
+            type="button"
+            onClick={() => setShowResetModal(true)}
+            className="text-sm text-indigo-400 hover:underline"
+          >
+            Forgot password?
+          </button>
+        </div>
 
         <button
           type="submit"
@@ -94,6 +106,11 @@ const Login = () => {
           </span>
         </p>
       </form>
+
+      {/* Reset Password Modal */}
+      {showResetModal && (
+        <ResetPassword onClose={() => setShowResetModal(false)} />
+      )}
     </div>
   );
 };
